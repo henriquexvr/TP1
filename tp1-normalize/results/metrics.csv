@@ -1,0 +1,13 @@
+version,N,D,wall,user,sys,memoryKB
+baseline,1000,3,0.000007,0.000007,0.000000,1704
+quake,1000,3,0.000006,0.000005,0.000000,1792
+sse,1000,3,0.000006,0.000000,0.000005,1704
+baseline,1000,10,0.000010,0.000010,0.000000,1792
+quake,1000,10,0.000008,0.000008,0.000000,1792
+sse,1000,10,0.000008,0.000007,0.000000,1792
+Erro ao abrir arquivo: tests/data_10000x3.csv
+Erro ao abrir arquivo: tests/data_10000x3.csv
+Erro ao abrir arquivo: tests/data_10000x3.csv
+Erro ao abrir arquivo: tests/data_10000x10.csv
+Erro ao abrir arquivo: tests/data_10000x10.csv
+Erro ao abrir arquivo: tests/data_10000x10.csv
