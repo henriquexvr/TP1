@@ -7,7 +7,18 @@
 float* readCsv(const char* filename, int* numRows, int* numCols);
 void normalizeBaseline(float* v, int len);
 void normalizeQuake(float* v, int len);
-void normalizeSse(float* v, int len);
+
+// Detect which SIMD implementation is available
+#if defined(__x86_64__) || defined(_M_X64)
+    void normalizeSse(float* v, int len);
+    #define HAS_SSE 1
+#elif defined(__aarch64__) || defined(__arm__) || defined(_M_ARM64)
+    void normalizeSseArm(float* v, int len);
+    #define normalizeSse normalizeSseArm
+    #define HAS_NEON 1
+#else
+    #define HAS_SIMD_WARNING 1
+#endif
 
 double getTimeInSeconds(struct timeval* tv) {
     return (double)tv->tv_sec + (double)tv->tv_usec / 1000000.0;
@@ -37,8 +48,14 @@ int main(int argc, char** argv) {
         normalizeFunc = normalizeBaseline;
     else if (strcmp(version, "quake") == 0)
         normalizeFunc = normalizeQuake;
-    else if (strcmp(version, "sse") == 0)
+    else if (strcmp(version, "sse") == 0) {
+        #ifdef HAS_SIMD_WARNING
+        printf("Aviso: SIMD nao disponivel nesta arquitetura, usando Quake\n");
+        normalizeFunc = normalizeQuake;
+        #else
         normalizeFunc = normalizeSse;
+        #endif
+    }
     else {
         printf("Versão inválida!\n");
         free(data);

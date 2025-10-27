@@ -51,38 +51,86 @@ TP1/
 
 ## 🚀 Como Compilar e Executar
 
-### Opção 1: Makefile Simples (macOS/Linux)
+### ⚡ Quick Start (Recomendado)
 
+#### macOS / Linux
 ```bash
-# Compilar
-make
+# Clonar ou entrar no diretório do projeto
+cd TP1
 
-# Executar uma versão específica
-./normalize tests/sample_data.csv baseline
-./normalize tests/sample_data.csv quake
-./normalize tests/sample_data.csv sse
-
-# Limpar binários
-make clean
-```
-
-### Opção 2: CMake (Recomendado - Multiplataforma)
-
-```bash
-# Criar diretório de build
-mkdir -p build && cd build
-
-# Gerar arquivos de compilação (detecta arquitetura automaticamente)
-cmake ..
-
-# Compilar
-cmake --build .
+# Compilar usando script
+bash build.sh
 
 # Executar
-./normalize ../tests/sample_data.csv baseline
+./build/normalize tests/sample_data.csv baseline
+./build/normalize tests/data_1000x10.csv sse
 ```
 
-### Opção 3: Compilação Manual
+#### Windows (PowerShell ou CMD)
+```cmd
+# Compilar usando script
+build.bat
+
+# Executar
+build\Release\normalize.exe tests\sample_data.csv baseline
+build\Release\normalize.exe tests\data_1000x10.csv sse
+```
+
+---
+
+### Opção 1: Makefile Wrapper (Unix-like)
+
+O projeto inclui um Makefile que funciona como wrapper para o CMake:
+
+```bash
+# Compilar
+make build
+
+# Limpar
+make clean
+
+# Ver opções
+make help
+```
+
+---
+
+### Opção 2: CMake Manual (Todas as Plataformas)
+
+#### Setup inicial (qualquer SO)
+```bash
+# Criar diretório de build
+mkdir build
+cd build
+
+# Configurar o projeto (detecta arquitetura automaticamente!)
+cmake -DCMAKE_BUILD_TYPE=Release ..
+```
+
+#### Compilar
+
+**Linux/macOS:**
+```bash
+cmake --build . --config Release
+```
+
+**Windows (Visual Studio):**
+```cmd
+cmake --build . --config Release
+```
+
+#### Executar
+```bash
+# Linux/macOS
+./normalize ../tests/sample_data.csv baseline
+
+# Windows
+Release\normalize.exe ..\tests\sample_data.csv baseline
+```
+
+---
+
+### Opção 3: Compilação Manual com GCC (Apenas x86-64)
 
 ```bash
 gcc -O3 -Wall -Wextra -o normalize src/main.c src/csvReader.c \
@@ -91,103 +139,167 @@ gcc -O3 -Wall -Wextra -o normalize src/main.c src/csvReader.c \
 
 ---
 
-## 🔧 Parâmetros de Entrada
+## 📊 Exemplos de Uso Completo
 
-```
-./normalize <arquivo.csv> <versao>
-
-Argumentos:
-  arquivo.csv    Caminho para arquivo CSV com dados (formato: valores separados por vírgula)
-  versao         Uma de: baseline | quake | sse
-
-Exemplo:
-  ./normalize tests/data_1000x10.csv sse
-```
-
----
-
-## 📊 Formato de Saída
-
-O programa exibe métricas de desempenho em formato CSV:
-
-```
-version,N,D,wall,user,sys,memoryKB
-baseline,1000,3,0.001234,0.001200,0.000050,2048
-quake,1000,3,0.000987,0.000950,0.000040,2048
-sse,1000,3,0.000567,0.000540,0.000030,2048
-```
-
-**Campos:**
-- `version`: Versão do algoritmo usado
-- `N`: Número de vetores no dataset
-- `D`: Dimensão de cada vetor
-- `wall`: Tempo de parede (wall-clock time) em segundos
-- `user`: Tempo de CPU em modo usuário (segundos)
-- `sys`: Tempo de CPU em modo sistema (segundos)
-- `memoryKB`: Uso máximo de memória em KB
-
----
-
-## 🧪 Executar Experimentos Completos
-
-O script `runExperiments.sh` executa todas as versões em diferentes datasets:
+### Exemplo 1: Testar uma versão em dados pequenos
 
 ```bash
-# Compilar primeiro
-make
+# Compilar
+bash build.sh
 
-# Rodar todos os experimentos
+# Rodar baseline
+./build/normalize tests/sample_data.csv baseline
+# Output: baseline,3,3,0.000001,0.000001,0.000000,2048
+
+# Rodar Quake
+./build/normalize tests/sample_data.csv quake
+# Output: quake,3,3,0.000001,0.000001,0.000000,2048
+
+# Rodar SIMD (SSE em x86, NEON em ARM)
+./build/normalize tests/sample_data.csv sse
+# Output: sse,3,3,0.000001,0.000001,0.000000,2048
+```
+
+### Exemplo 2: Comparar desempenho com dados maiores
+
+```bash
+bash build.sh
+
+# Executar com 1000 vetores de 100 dimensões
+./build/normalize tests/data_1000x100.csv baseline
+./build/normalize tests/data_1000x100.csv quake
+./build/normalize tests/data_1000x100.csv sse
+```
+
+### Exemplo 3: Rodar experimentos automaticamente
+
+```bash
+bash build.sh
+
+# Gerar dados de teste (opcional)
+python3 scripts/geracaoDeDados.py 1000 50
+
+# Rodar experimentos (Linux/macOS)
 bash scripts/runExperiments.sh
-
-# Resultados serão salvos em results/metrics.csv
-cat results/metrics.csv
 ```
 
 ---
 
-## 📈 Gerar Dados de Teste
+## 🧪 Gerar Dados Customizados
 
-Use o script Python para gerar datasets customizados:
+Use o script Python para criar datasets de teste com tamanhos diferentes:
 
 ```bash
 # Gerar 5000 vetores de dimensão 50
 python3 scripts/geracaoDeDados.py 5000 50
 
-# Isso cria: tests/data_5000x50.csv
+# Resultado: tests/data_5000x50.csv
 ```
 
 **Requisitos:**
-- Python 3
-- NumPy
+```bash
+pip install numpy
+# ou
+apt install python3-numpy  # Linux
+brew install numpy         # macOS
+```
 
 ---
 
-## ⚙️ Compatibilidade de Arquitetura
+## 🏗️ Como o CMake Detecta Arquitetura
 
-### ⚠️ Problema Atual
+O CMake detecta automaticamente a arquitetura do seu processador e compila a versão otimizada apropriada:
 
-Este projeto tem **limitações de compatibilidade de arquitetura**:
-
-- **SSE** (Streaming SIMD Extensions): ✅ Funciona apenas em **x86-64**
-- **NEON** (Advanced SIMD): ❌ Necessário para **ARM64** (Apple Silicon, etc.)
-
-| Arquitetura | Status | Arquivo |
-|-------------|--------|---------|
-| x86-64 (Intel/AMD) | ✅ Compilado | `normalizeSse.c` |
-| ARM64 (Apple M1/M2) | ⚠️ Fallback | `normalizeQuake.c` apenas |
-| WSL (Linux x86-64) | ✅ Compilado | `normalizeSse.c` |
-
-### 🔧 Solução: Versão ARM com NEON
-
-Se compilar em ARM (ex: macOS em Macbook Air M1/M2), use CMake que detecta a arquitetura automaticamente:
-
-```bash
-mkdir build && cd build
-cmake ..
-cmake --build .
+### x86-64 (Intel/AMD)
+```
+CMake detects: x86_64
+Compiles: src/normalizeSse.c (SSE intrinsics)
+Flags: -msse -O3
 ```
 
-O CMake detectará se é ARM ou x86-64 e compilará a versão otimizada apropriada.
+### ARM (Apple M1/M2, Raspberry Pi)
+```
+CMake detects: aarch64 / arm
+Compiles: src/normalizeSseArm.c (NEON intrinsics)
+Flags: -march=armv8-a+simd -O3
+```
+
+### Arquitetura Desconhecida
+```
+Falls back to: normalizeQuake.c (sem SIMD)
+Warning: "Unknown architecture"
+```
+
+---
+
+## 🔧 Troubleshooting
+
+### ❌ "cmake: command not found"
+
+**Solução:** Instalar CMake
+
+```bash
+# macOS
+brew install cmake
+
+# Ubuntu/Debian
+sudo apt install cmake
+
+# Fedora/RHEL
+sudo yum install cmake
+
+# Windows
+# Baixar de: https://cmake.org/download/
+```
+
+### ❌ "No compiler found"
+
+**Linux/macOS:**
+```bash
+# Instalar GCC/Clang
+# macOS
+xcode-select --install
+
+# Ubuntu
+sudo apt install build-essential
+
+# Fedora
+sudo yum install gcc
+```
+
+**Windows:**
+- Instalar Visual Studio Community Edition
+- Ou: `choco install mingw` (se usar Chocolatey)
+
+### ❌ NEON não disponível (ARM)
+
+Se receber erro compilando em ARM:
+```bash
+# Certificar-se que está compilando com flags NEON
+cmake -DCMAKE_BUILD_TYPE=Release ..
+
+# Ou manualmente
+gcc -march=armv8-a+simd -O3 ...
+```
+
+### ❌ Aviso "CRLF will be replaced by LF"
+
+Isso é normal no Windows. Apenas gitignore.
+
+```bash
+git config core.safecrlf false
+```
+
+---
+
+## 📋 Checklist de Compilação Bem-Sucedida
+
+- [x] Projeto clonado/acessado
+- [ ] CMake instalado (`cmake --version`)
+- [ ] Compilador instalado (`gcc --version` ou `clang --version`)
+- [ ] `bash build.sh` ou `build.bat` executado sem erros
+- [ ] Arquivo `build/normalize` ou `build\Release\normalize.exe` existe
+- [ ] `./build/normalize tests/sample_data.csv baseline` funciona
 
 ---
 
